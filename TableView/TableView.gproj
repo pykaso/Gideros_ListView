@@ -1,9 +1,0 @@
-<project>
- <properties autorotation="0" fps="60" scaleMode="3" mouseToTouch="1" iosDevice="0" packageName="com.yourdomain.yourapp" logicalHeight="800" logicalWidth="480" mouseTouchOrder="0" retinaDisplay="0" touchToMouse="1" assetsOnly="0" orientation="0" architecture="0">
-  <imageScales/>
- </properties>
- <file source="serpent.lua"/>
- <file source="TableViewXL.lua"/>
- <file source="main.lua"/>
- <file source="TableView.lua"/>
-</project>
