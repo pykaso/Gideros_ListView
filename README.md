@@ -29,12 +29,12 @@ USAGE
 Example
 ```lua
 myList = ListView.new({
-   width=280,
-   height=390,
+   width = 280,
+   height = 390,
    bgTexture = Texture.new("texture.png"),
    rowSnap = true, experimental feature
    friction = 0.92
-   data=data
+   data = data
 })
 myList:setPosition(x, y)
 ```
@@ -42,8 +42,8 @@ myList:setPosition(x, y)
 Minimal example
 ```lua
 myList = ListView.new({
-   width=280,
-   height=390,
-   data=data
+   width = 280,
+   height = 390,
+   data = data
 })
 ```
