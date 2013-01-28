@@ -50,7 +50,8 @@ function ListView:init(params)
 		bgTexture = params.bgTexture or nil,
 		rowSnap = params.rowSnap or false,
 		friction = params.friction or 0.92,		
-		callback = params.callback or function(row) return row end	
+		callback = params.callback or function(row) return row end,
+		onScroll = params.onScroll or nil
 	}
 
 	local prevY, prevH, i, finalData = 0,0,0,{}
@@ -81,6 +82,17 @@ function ListView:init(params)
 	self:closePath()
 	self:endPath()
 	
+	-- create defined shape
+	self.mask = Shape.new()
+	self.mask:beginPath()
+	self.mask:moveTo(0, 0)
+	self.mask:lineTo(0, self.cfg.height)
+	self.mask:lineTo(self.cfg.width, self.cfg.height)
+	self.mask:lineTo(self.cfg.width, 0)
+	self.mask:closePath()
+	self.mask:endPath()
+	self:addChild(self.mask)
+	
 	self.listItems = Sprite.new()
 	self:addChild(self.listItems)
 	self.viewSize = self.cfg.height
@@ -100,7 +112,7 @@ function ListView:newListItem(id, data)
 
         thisItem:addEventListener(Event.TOUCHES_BEGIN,
 			function(e)
-				if(self:hitTestPoint(e.touch.x, e.touch.y)) then
+				if(self.mask:hitTestPoint(e.touch.x, e.touch.y)) then
 					tv:listItemTouch(e,"begin")
 				end
 			end)
@@ -127,6 +139,7 @@ function ListView:listItemTouch(e, act)
 
 		if self.tween then 
 			self.tween:setPaused(true)
+			self.tween = nil
 		end
 		
 		self:removeEventListener("enterFrame", self.scrollList, self) 
@@ -134,10 +147,13 @@ function ListView:listItemTouch(e, act)
 		
 	elseif( self.isFocus ) then
 		if(act == "move") then
+			local lastItem = li:getChildAt(li:getNumChildren())
 			delta = (e.touch.y - prevPos)
 			prevPos = e.touch.y
-			if (li:getChildAt(1).id == 1 and li:getY() > top) or (li:getChildAt(li:getNumChildren()).id == #self.itemData  and li:getY() < height) then
-				li:setY(li:getY() + delta/2)
+
+			if (li:getChildAt(1).id == 1 and li:getY() > 0) or 
+			(lastItem.id == #self.itemData and (self.listHeight - lastItem:getY()-lastItem:getHeight()) <= 0) then
+				li:setY(li:getY() + delta/3)
 			else
 				li:setY(li:getY() + delta)
 			end
@@ -161,8 +177,10 @@ function ListView:scrollList(event)
 		-- experimental feature
 		if self.cfg.rowSnap then
 			local _me = self
+			local lastItem = self.listItems:getChildAt(self.listItems:getNumChildren())
 			local firstVisibleItem = self:getFirstVisibleRow()
-			if(firstVisibleItem ~= nil) then
+
+			if(firstVisibleItem ~= nil and self.listItems:getY() < 0 and (self.listHeight - lastItem:getY()-lastItem:getHeight()) > 0) then
 				local x, y = firstVisibleItem:getBounds(self)
 				local vx, vy = self.listItems:localToGlobal(self.listItems:getBounds(self))
 				local final = self.listItems:getY()
@@ -171,9 +189,7 @@ function ListView:scrollList(event)
 				else
 					final = self.listItems:getY() - (firstVisibleItem:getHeight()+y)
 				end
-				self.tween = GTween.new(self.listItems, 0.5, {y=final}, {delay = 0.1, ease = easing.outQuartic, onChange = function()
-					self:updateRender()
-				end})
+				self.tween = GTween.new(self.listItems, 0.7, {y=final}, {delay = 0.01, ease = easing.outQuartic, onChange = function() self:updateRender() end})
 			end
 		else
 			
@@ -188,27 +204,29 @@ function ListView:scrollList(event)
 	li:setY(math.floor(self.listItems:getY() + velocity*timePassed))
 
 	self:updateRender()
-	
+		
 	local firstItem = li:getChildAt(1)
 	local lastItem = li:getChildAt(li:getNumChildren())
+	local lx,ly = self:localToGlobal(li:getBounds(self))
 	local x, y, w, h = self:getBounds(self)
 	local x2, y2 = self:localToGlobal(x, y)
+	--local lx,ly = lastItem:getBounds(self)
 
-	if firstItem.id == 1 and li:getY() > y2 then
+	if firstItem.id == 1 and li:getY() > 0 then
 		velocity = 0
 		self:removeEventListener("enterFrame", self.scrollList, self)
-		self.tween = GTween.new(li, 0.2, {y=li.yInit}, {delay = 0.1, ease = easing.outQuartic})	
+		self.tween = GTween.new(li, 0.4, {y=li.yInit}, {delay = 0.01, ease = easing.outQuartic})	
 	end	
-
-	if lastItem.id == #self.itemData and li:getY() < 0 then
+	
+	if lastItem.id == #self.itemData and (self.listHeight - lastItem:getY()-lastItem:getHeight()) <= 0 then
 		if self.listHeight > self.viewSize and li:getY() < -self.listHeight+self.viewSize-lastItem:getHeight()*0.5 then
 			velocity = 0
 			self:removeEventListener("enterFrame", self.scrollList, self)
-			self.tween = GTween.new(li, 0.2, {y=math.ceil(self.viewSize - self.listHeight)}, {delay = 0.1, ease = easing.outQuartic})
+			self.tween = GTween.new(li, 0.4, {y=math.ceil(self.viewSize - self.listHeight)}, {delay = 0.01, ease = easing.outQuartic})
 		elseif self.listHeight < self.viewSize then 
 			velocity = 0
 			self:removeEventListener("enterFrame", self.scrollList, self)
-			self.tween = GTween.new(li, 0.2, {y=li.yInit}, {delay = 0.1, ease = easing.outQuartic})
+			self.tween = GTween.new(li, 0.4, {y=li.yInit}, {delay = 0.01, ease = easing.outQuartic})
 		end
 	end 
 	return true
@@ -220,12 +238,15 @@ function ListView:getFirstVisibleRow()
 	local item = nil
 	
 	while posY <= self:getY() do
-		item = self.listItems:getChildAt(index)
-		local x1, y1 = self:localToGlobal(item:getBounds(self))
-		posY = y1 + item:getHeight()
-		index = index + 1
+		if(index < self.listItems:getNumChildren()) then
+			item = self.listItems:getChildAt(index)
+			local x1, y1 = self:localToGlobal(item:getBounds(self))
+			posY = y1 + item:getHeight()
+			index = index + 1
+		else
+			return nil
+		end
 	end
-	
 	return item
 end
 
@@ -233,7 +254,6 @@ function ListView:createRender()
 	local lastY = 0
 	local position = 1
 	while lastY < self.viewSize and position<=#self.itemData do
-		print(position)
 		local rowObject = self:render(nil, position)
 		if (rowObject == nil) then break end
 		self.listItems:addChild(rowObject)
@@ -260,15 +280,14 @@ end
 function ListView:updateRender()
 	local firstItem = self.listItems:getChildAt(1)	
 	local lastItem = self.listItems:getChildAt(self.listItems:getNumChildren())
-	local bottom = self.viewSize - self.listItems:getY()
-	local fillToTop = firstItem:getY() > self.listItems:getY()*-1  
-	local fillToBottom = lastItem:getY() + lastItem:getHeight() < bottom
+	local fx,fy = firstItem:getBounds(self)
+	local lx,ly = lastItem:getBounds(self)
+	local bottom = self.viewSize + self:getY()
+	local fillToTop =  fy > 0
+	local fillToBottom = ly + lastItem:getHeight() < self.viewSize
 
 	if fillToBottom then
-		local x, y, w, h = lastItem:getBounds(lastItem)
-		local x1, y1 = lastItem:localToGlobal(x, y)
-		
-		if (y1 + lastItem:getHeight() < bottom) and (lastItem.id ~= #self.itemData) then
+		if (ly + lastItem:getHeight() < self.viewSize) and (lastItem.id ~= #self.itemData) then
 			local y = lastItem:getY() + lastItem:getHeight()
 			local recycledRow = firstItem
 			self:render(recycledRow, lastItem.id+1)
@@ -277,20 +296,18 @@ function ListView:updateRender()
 		end	
 
 	elseif fillToTop then
-		
-		local x, y, w, h = firstItem:getBounds(firstItem)
-		local x1, y1 = firstItem:localToGlobal(x, y)		
-		local x, y, w, h = self:getBounds(self)
-		local x2, y2 = self:localToGlobal(x, y)
-
-		if (y1 > self:getY()) and (firstItem.id ~= 1) then
+		if fy > 0 and (firstItem.id ~= 1) then
 			local recycledRow = lastItem
 			local newItem = self:render(recycledRow, firstItem.id-1)
 			local y = firstItem:getY() - newItem:getHeight()
 			self.listItems:addChildAt(recycledRow, 1)
 			recycledRow:setY(y)
-		end		
-	end	
+		end
+	end
+
+	if (self.cfg.onScroll ~= nil) then
+		self.cfg.onScroll(self, firstItem)
+	end
 end
 
 function ListView:trackVelocity(event) 	
