@@ -10,6 +10,7 @@ data[4] = box(300, 480, 25, 0xffffff)
 myList = ListView.new({
 	width=480,
 	height=700,
+	friction = 0.97,
 	bgTexture = Texture.new("resources/images/texture.png"),
 	data=data
 })

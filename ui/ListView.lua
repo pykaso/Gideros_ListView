@@ -148,14 +148,14 @@ function ListView:listItemTouch(e, act)
 	elseif( self.isFocus ) then
 		if(act == "move") then
 			local lastItem = li:getChildAt(li:getNumChildren())
-			delta = (e.touch.y - prevPos)
+			delta = e.touch.y - prevPos
 			prevPos = e.touch.y
 
 			if (li:getChildAt(1).id == 1 and li:getY() > 0) or 
 			(lastItem.id == #self.itemData and (self.listHeight - lastItem:getY()-lastItem:getHeight()) <= 0) then
-				li:setY(li:getY() + delta/3)
+				li:setY(math.floor(li:getY() + delta/3))
 			else
-				li:setY(li:getY() + delta)
+				li:setY(math.floor(li:getY() + delta))
 			end
 			self:updateRender()     		
 		end
@@ -170,7 +170,7 @@ end
 
 function ListView:scrollList(event)
 
-	if math.abs(velocity) < 0.1 then
+	if math.abs(velocity) < 0.3 then
 		velocity = 0
 		self:removeEventListener("enterFrame", self.scrollList, self)
 		

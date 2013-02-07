@@ -1,5 +1,5 @@
 <project>
- <properties autorotation="0" fps="60" scaleMode="0" mouseToTouch="1" iosDevice="0" packageName="com.yourdomain.yourapp" logicalHeight="480" logicalWidth="320" mouseTouchOrder="0" retinaDisplay="0" touchToMouse="1" assetsOnly="0" orientation="0" architecture="0">
+ <properties autorotation="0" fps="60" scaleMode="0" mouseToTouch="1" iosDevice="0" packageName="net.pykaso.gideros.listview.sample1" logicalHeight="480" logicalWidth="320" mouseTouchOrder="0" retinaDisplay="0" touchToMouse="1" assetsOnly="0" orientation="0" architecture="1">
   <imageScales/>
  </properties>
  <folder name="libs">
